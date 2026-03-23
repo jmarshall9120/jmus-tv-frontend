@@ -1,0 +1,193 @@
+---
+description: Vuetify UI component patterns and conventions
+globs:
+  - "**/*.vue"
+  - "**/components/**/*.vue"
+alwaysApply: false
+---
+
+# Vuetify Patterns
+
+## Layout Components
+
+### Container and Grid
+
+```vue
+<v-container>
+  <v-row>
+    <v-col cols="12" md="6">
+      <!-- Content -->
+    </v-col>
+    <v-col cols="12" md="6">
+      <!-- Content -->
+    </v-col>
+  </v-row>
+</v-container>
+```
+
+### Spacing
+
+```vue
+<v-row>
+  <v-col>
+    <v-btn>Button</v-btn>
+  </v-col>
+  <v-spacer/> <!-- Use v-spacer for flex spacing -->
+  <v-col>
+    <v-btn>Button</v-btn>
+  </v-col>
+</v-row>
+```
+
+## Form Components
+
+### Text Fields
+
+```vue
+<v-text-field
+  v-model="email"
+  prepend-icon="mdi-email"
+  label="Email"
+  :error-messages="errorMessage"
+  :error="hasError"
+  :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+  :type="showPassword ? 'text' : 'password'"
+  @click:append-inner="showPassword = !showPassword"
+/>
+```
+
+### Buttons
+
+```vue
+<!-- Primary action -->
+<v-btn color="primary" @click="submit">Submit</v-btn>
+
+<!-- Secondary action -->
+<v-btn color="secondary" @click="cancel">Cancel</v-btn>
+
+<!-- Destructive action -->
+<v-btn color="error" @click="delete">Delete</v-btn>
+
+<!-- With loading state -->
+<v-btn 
+  color="primary" 
+  :loading="loading"
+  :disabled="loading"
+  @click="handleAction"
+>
+  Save
+</v-btn>
+```
+
+### Cards
+
+```vue
+<v-card>
+  <v-card-title>Card Title</v-card-title>
+  <v-card-subtitle>Subtitle</v-card-subtitle>
+  <v-card-text>
+    <!-- Card content -->
+  </v-card-text>
+  <v-card-actions>
+    <v-btn color="error" @click="cancel">Cancel</v-btn>
+    <v-spacer/>
+    <v-btn color="primary" @click="submit">Submit</v-btn>
+  </v-card-actions>
+</v-card>
+```
+
+## Navigation Components
+
+### App Bar
+
+```vue
+<v-app-bar>
+  <v-app-bar-title>Title</v-app-bar-title>
+  <v-spacer/>
+  <v-btn icon="mdi-menu" @click="toggleDrawer"/>
+</v-app-bar>
+```
+
+### Navigation Drawer
+
+```vue
+<v-navigation-drawer v-model="drawer">
+  <v-list>
+    <v-list-item
+      v-for="item in navItems"
+      :key="item.title"
+      :to="item.to"
+      :prepend-icon="item.icon"
+    >
+      <v-list-item-title>{{ item.title }}</v-list-item-title>
+    </v-list-item>
+  </v-list>
+</v-navigation-drawer>
+```
+
+## Data Display
+
+### Tables
+
+```vue
+<v-table>
+  <thead>
+    <tr>
+      <th>Column 1</th>
+      <th>Column 2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr v-for="item in items" :key="item.id">
+      <td>{{ item.field1 }}</td>
+      <td>{{ item.field2 }}</td>
+    </tr>
+  </tbody>
+</v-table>
+```
+
+### Dialogs
+
+```vue
+<v-dialog v-model="dialog" max-width="500">
+  <v-card>
+    <v-card-title>Dialog Title</v-card-title>
+    <v-card-text>
+      <!-- Dialog content -->
+    </v-card-text>
+    <v-card-actions>
+      <v-spacer/>
+      <v-btn @click="dialog = false">Close</v-btn>
+      <v-btn color="primary" @click="confirm">Confirm</v-btn>
+    </v-card-actions>
+  </v-card>
+</v-dialog>
+```
+
+## Icons
+
+Always use Material Design Icons (`mdi-*`):
+
+```vue
+<!-- Prepend icon -->
+<v-text-field prepend-icon="mdi-email" />
+
+<!-- Append icon -->
+<v-text-field append-icon="mdi-search" />
+
+<!-- Button icon -->
+<v-btn icon="mdi-delete" />
+
+<!-- Standalone icon -->
+<v-icon>mdi-check</v-icon>
+```
+
+## Important Notes
+
+- **Use Vuetify components** - don't use plain HTML elements
+- **Use Material Design Icons** (`mdi-*`) - icons are auto-imported
+- **Follow Vuetify layout system** - use `v-container`, `v-row`, `v-col`
+- **Use `v-spacer`** for flex spacing, not margins
+- **Handle loading states** with `:loading` prop on buttons
+- **Use color props** (`color="primary"`, `color="error"`, etc.)
+- **Check existing components** for Vuetify usage patterns

@@ -1,0 +1,36 @@
+# Nuxt dev/build outputs
+.output
+.data
+.nuxt
+.nitro
+.cache
+dist
+
+# Node dependencies
+node_modules
+
+# Logs
+logs
+*.log
+
+# Misc
+.DS_Store
+.fleet
+.idea
+
+# Local env files
+.env
+.env.*
+!.env.example
+!.env.test.example
+
+# Data files
+data/
+
+# Test auth cache (SRP token for API tests; do not commit)
+.jmus/.test-id-token.json
+.jmus/tmp/
+.jmus/outputs*.json
+!.jmus/outputs-clean.json
+tests/utils/.test_auth_cache.json
+tests/output/

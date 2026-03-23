@@ -1,0 +1,63 @@
+{
+  "cognito-dev": {
+    "AppSyncGrantsDdbAccessRoleArn": "arn:aws:iam::000000000000:role/jmus-cognito-dev-placeholder",
+    "AppSyncInvokeCognitoAdminRoleArn": "arn:aws:iam::000000000000:role/jmus-cognito-dev-placeholder",
+    "BackendJMusTestingClient": "placeholder_testing_client_id",
+    "CognitoAdminLambdaRoleArn": "arn:aws:iam::000000000000:role/jmus-cognito-dev-placeholder",
+    "GrantsApiId": "placeholder_grants_api_id",
+    "GrantsApiKey": "placeholder_grants_api_key",
+    "GrantsApiUrl": "https://placeholder.appsync-api.us-west-2.amazonaws.com/graphql",
+    "LambdaArtifactsBucketArn": "arn:aws:s3:::jmus-lambda-artifacts-dev-placeholder",
+    "LambdaArtifactsBucketName": "jmus-lambda-artifacts-dev-placeholder",
+    "Region": "us-west-2",
+    "UserPoolArn": "arn:aws:cognito-idp:us-west-2:000000000000:userpool/us-west-2_placeholder",
+    "UserPoolId": "us-west-2_placeholder",
+    "WebClientId": "placeholder_webclient_id",
+    "WebClientId2": "placeholder_webclient_id_2",
+    "WebClientId3": "placeholder_webclient_id_3"
+  },
+  "jmus-data-stack-dev": {
+    "AppSyncLambdaAccessRoleArn": "arn:aws:iam::000000000000:role/jmus-appsync-lambda-role-dev",
+    "AthenaWorkgroupName": "jmus-dev-placeholder",
+    "DatabaseName": "jmus_dev",
+    "GlueDatabaseName": "jmus_dev",
+    "GlueETLRoleArn": "arn:aws:iam::000000000000:role/jmus-glue-service-role-dev",
+    "GlueServiceRoleArn": "arn:aws:iam::000000000000:role/jmus-glue-service-role-dev",
+    "GraphQLApiId": "placeholder_graphql_api_id",
+    "GraphQLApiUrl": "https://placeholder.appsync-api.us-west-2.amazonaws.com/graphql",
+    "NotebookExecutionRoleArn": "arn:aws:iam::000000000000:role/jmus-notebook-role-dev",
+    "RawDataBucketName": "jmus-raw-data-dev-placeholder",
+    "UploadLambdaRoleArn": "arn:aws:iam::000000000000:role/jmus-upload-lambda-role-dev"
+  },
+  "analyticsjobs-dev": {
+    "BillingMode": "PAY_PER_REQUEST",
+    "GlobalSecondaryIndexNames": "by-type,by-file",
+    "PartitionKeyName": "PK",
+    "SortKeyName": "SK",
+    "TableArn": "arn:aws:dynamodb:us-west-2:000000000000:table/jmus-analyticsjobs-dev-placeholder",
+    "TableName": "jmus-analyticsjobs-dev-placeholder"
+  },
+  "filemetadatas-dev": {
+    "BillingMode": "PAY_PER_REQUEST",
+    "GlobalSecondaryIndexNames": "by-type,by-status,by-user",
+    "PartitionKeyName": "PK",
+    "SortKeyName": "SK",
+    "TableArn": "arn:aws:dynamodb:us-west-2:000000000000:table/jmus-filemetadatas-dev-placeholder",
+    "TableName": "jmus-filemetadatas-dev-placeholder"
+  },
+  "stdmatchs-dev": {
+    "BillingMode": "PAY_PER_REQUEST",
+    "GlobalSecondaryIndexNames": "by-type",
+    "PartitionKeyName": "PK",
+    "SortKeyName": "SK",
+    "TableArn": "arn:aws:dynamodb:us-west-2:000000000000:table/jmus-stdmatchs-dev-placeholder",
+    "TableName": "jmus-stdmatchs-dev-placeholder"
+  },
+  "grants-dev": {
+    "BillingMode": "PAY_PER_REQUEST",
+    "PartitionKeyName": "cognito_id",
+    "SortKeyName": "action",
+    "TableArn": "arn:aws:dynamodb:us-west-2:000000000000:table/jmus-grants-dev-placeholder",
+    "TableName": "jmus-grants-dev-placeholder"
+  }
+}

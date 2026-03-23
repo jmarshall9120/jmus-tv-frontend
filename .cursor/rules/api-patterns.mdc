@@ -1,0 +1,335 @@
+---
+description: AppSync GraphQL API patterns and data provider conventions
+globs: 
+  - "**/composables/dataProviders/**/*.ts"
+  - "**/composables/dataStores/**/*.ts"
+  - "**/stores/**/*.ts"
+alwaysApply: false
+---
+
+# AppSync GraphQL API Patterns
+
+## Direct GraphQL Fetch Pattern (Latest - bloggenai)
+
+**Use direct GraphQL fetch** with Authorization headers for new projects. This gives full control over authentication.
+
+### GraphQL Client Pattern
+
+```typescript
+// composables/useBlogGenData.ts
+export const useBlogGenData = () => {
+  const { getIdToken } = useAuth()
+  
+  const getEndpoint = () => {
+    const config = useState<{ bloggenaiApiUrl: string }>('amplify:pub').value
+    return config?.bloggenaiApiUrl || ''
+  }
+  
+  // Create a client object that mimics Amplify's interface
+  const client = {
+    graphql: async <T = any>(options: { query: string; variables?: Record<string, any> }): Promise<{ data: any; errors?: any[] }> => {
+      const endpoint = getEndpoint()
+      const token = getIdToken()
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token || '',
+        },
+        body: JSON.stringify({ query: options.query, variables: options.variables }),
+      })
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      return await response.json()
+    }
+  }
+
+  /**
+   * Check GraphQL response for errors
+   * AppSync returns 200 OK even with GraphQL errors in the errors array
+   */
+  const checkGraphQLErrors = (result: any, operation: string) => {
+    if (result.errors && result.errors.length > 0) {
+      const errorMessages = result.errors.map((e: any) => e.message).join('; ')
+      throw new Error(`GraphQL ${operation} failed: ${errorMessages}`)
+    }
+  }
+
+  const getBlog = async (id: string): Promise<Blog | null> => {
+    const query = `
+      query GetBlog($id: ID!) {
+        getBlog(id: $id) {
+          id
+          title
+          content
+          # ... other fields
+        }
+      }
+    `
+
+    const result = await client.graphql({
+      query,
+      variables: { id }
+    })
+
+    checkGraphQLErrors(result, 'getBlog')
+
+    const raw = result.data?.getBlog as Blog | null
+    return raw ? blogModel.parse(raw) : null
+  }
+
+  const createBlog = async (input: BlogWritable): Promise<Blog> => {
+    const query = `
+      mutation CreateBlog($input: CreateBlogInput!) {
+        createBlog(input: $input) {
+          id
+          title
+          content
+          # ... other fields
+        }
+      }
+    `
+
+    // Stringify AWSJSON fields (arrays/objects -> JSON strings)
+    const stringified = blogModel.stringify(input)
+    
+    // Strip server-generated fields for create mutation
+    const { gsi1_pk, gsi1_sk, _created_at, _updated_at, _is_retired, _row_hash, ...createInput } = stringified
+
+    const result = await client.graphql({
+      query,
+      variables: { input: createInput }
+    })
+
+    checkGraphQLErrors(result, 'createBlog')
+
+    const raw = result.data?.createBlog as Blog
+    if (!raw) throw new Error('createBlog returned no data')
+    
+    return blogModel.parse(raw)
+  }
+
+  return {
+    getBlog,
+    createBlog,
+    // ... other operations
+  }
+}
+```
+
+### GraphQL Utility Pattern
+
+```typescript
+// utils/graphqlClient.ts
+export async function graphqlRequest<T = any>(
+  endpoint: string,
+  request: { query: string; variables?: Record<string, any> },
+  authToken?: string
+): Promise<{ data?: T; errors?: Array<{ message: string }> }> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  }
+
+  if (authToken) {
+    headers['Authorization'] = authToken
+  }
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      query: request.query,
+      variables: request.variables,
+    }),
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+  }
+
+  return await response.json()
+}
+```
+
+## Data Provider Pattern (Legacy - IvonneWelchDashboard)
+
+**Use the data provider pattern** if following the IvonneWelchDashboard patterns.
+
+### Base Data Provider Interface
+
+```typescript
+// composables/dataProviders/base.ts
+export interface IDataProvider<T> {
+  fetch: (params?: any) => Promise<ProccessedData<T | T[]>>
+  create: (data: any, params?: any) => Promise<ProccessedData<T | T[]>>
+  update: (data: any, params?: any) => Promise<ProccessedData<T | T[]>>
+  delete: (id: string, params?: any) => Promise<ProccessedData<T | T[]>>
+  reset: () => void
+}
+
+export type ProccessedData<T> = {
+  data: T | null
+  errors: IMessage[]
+}
+```
+
+### AppSync Provider Pattern
+
+```typescript
+// composables/dataProviders/ampifyAppSyncProvider.ts
+import type { Schema } from "~~/amplify/data/resource"
+import { generateClient } from 'aws-amplify/data'
+import type { IDataProvider } from "~/composables/dataProviders/base"
+
+export const useAmplifyAppsyncProvider = (query: string): IDataProvider<ProviderData> => {
+  const client = generateClient<Schema>()
+  const loading = ref<boolean>(false)
+
+  const fetch = async (params?: any): Promise<ProccessedData<ProviderData>> => {
+    loading.value = true
+    let authMode: 'userPool' | 'apiKey' | 'iam' | 'oidc' = 'userPool'
+    
+    if (params && Object.keys(params).includes('authMode')) {
+      authMode = params['authMode'] as typeof authMode
+      delete params['authMode']
+    }
+    
+    try {
+      const { data, errors } = await (client.queries as { [key: string]: any })[query](
+        params, 
+        { authMode: authMode }
+      )
+      
+      if (errors?.length) {
+        console.warn('Errors fetching data:', errors)
+      }
+      
+      return { 
+        data: data as ProviderData, 
+        errors: (errors as Error[] | IMessage[])?.map(error => ({ 
+          message: error.message, 
+          priority: MESSAGE_PRIORITY.ERROR 
+        })) || [] 
+      }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const create = async () => { 
+    throw new ManagedError({
+      message: 'Create operation not implemented', 
+      priority: MESSAGE_PRIORITY.ERROR
+    })
+  }
+  
+  const update = async () => { 
+    throw new ManagedError({
+      message: 'Update operation not implemented', 
+      priority: MESSAGE_PRIORITY.ERROR
+    })
+  }
+  
+  const _delete = async () => { 
+    throw new ManagedError({
+      message: 'Delete operation not implemented', 
+      priority: MESSAGE_PRIORITY.ERROR
+    })
+  }
+  
+  const reset = async () => {}
+
+  return { fetch, create, update, delete: _delete, reset }
+}
+```
+
+### Using AppSync Provider
+
+```typescript
+// composables/dataProviders/enrollments.ts
+import type { Schema } from "~~/amplify/data/resource"
+import { useAmplifyAppsyncProvider } from "./ampifyAppSyncProvider"
+
+export type BABDEnrollment = Schema['EnrollmentsByAgentByDayView']['type']
+export type ProviderData = DeserializedAnalyticsReturned<BABDEnrollment>
+
+export const useEnrollmentsProvider = (): IDataProvider<ProviderData> => {
+  return useAmplifyAppsyncProvider('GetEnrollmentsByAgentByMonthEnrolledView')
+}
+```
+
+### Analytics Wrapper Pattern
+
+For AppSync queries that return `AnalyticsReturned` type:
+
+```typescript
+// composables/dataStores/customAppsync.ts
+export const decodeAnalyticsReturned = <T>(data: Schema['AnalyticsReturned']['type'] | T[]): T[] => {
+  if ((data as T[])?.length >= 0 && typeof (data as T[])[0] !== 'string') {
+    return data as T[]
+  }
+  
+  data = data as Schema['AnalyticsReturned']['type']
+  if (!data.items?.length) return []
+  if (typeof data.items[0] === 'string') {
+    return data.items.map((item) => JSON.parse(item as string) as T)
+  }
+  return data.items as T[]
+}
+
+export const useAnalyticsWrapper = <T>(provider: IDataProvider<T>): IDataProvider<DeserializedAnalyticsReturned<T>> => {
+  const fetch = async (params?: any): Promise<ProccessedData<DeserializedAnalyticsReturned<T>>> => {
+    const data = await provider.fetch(params)
+    const _data = decodeAnalyticsReturned<T>(data.data as Schema['AnalyticsReturned']['type'] | T[])
+    return { 
+      data: { 
+        items: _data ?? [], 
+        next_token: '', 
+        record_count: 0, 
+        status_code: 200 
+      }, 
+      errors: data.errors || [] 
+    }
+  }
+  
+  return { fetch, create, update, delete: _delete, reset: () => provider.reset() }
+}
+```
+
+## Error Handling Pattern
+
+```typescript
+// ✅ GOOD - Use ManagedError and IMessage pattern
+import { MESSAGE_PRIORITY, ManagedError } from "~/utils/types"
+import type { IMessage } from "~/utils/types"
+
+try {
+  const result = await provider.fetch(params)
+  if (result.errors?.length) {
+    logger.debug('Errors:', result.errors)
+  }
+  return result
+} catch (err) {
+  const _err = err as Error
+  const errors: IMessage[] = [{
+    message: _err.message, 
+    priority: MESSAGE_PRIORITY.ERROR
+  }]
+  logger.debug('Error:', errors)
+  return { data: null, errors }
+}
+```
+
+## Important Notes
+
+- **ALWAYS use the data provider pattern** - never call AppSync directly from components
+- **Use `generateClient<Schema>()`** from `aws-amplify/data` for AppSync queries
+- **Handle authMode** - default to 'userPool', allow override via params
+- **Use AnalyticsWrapper** for queries returning `AnalyticsReturned` type
+- **Check existing providers** before creating new ones - follow the exact same structure
+- **Use logger** from `~/utils/logger` for debugging
+- **Return ProccessedData** format with `{ data, errors }` structure

@@ -1,0 +1,48 @@
+{
+  "records": [
+    {
+      "week": "2026-03-16",
+      "station": "KSBW-TV",
+      "gross_calls": 245,
+      "queued_calls": 168,
+      "written_count": 72,
+      "lift_calls": 38,
+      "lift_queued": 25,
+      "lift_written": 13,
+      "tfn_is_station": true
+    },
+    {
+      "week": "2026-03-16",
+      "station": "KNTV",
+      "gross_calls": 189,
+      "queued_calls": 142,
+      "written_count": 61,
+      "lift_calls": 32,
+      "lift_queued": 21,
+      "lift_written": 11,
+      "tfn_is_station": true
+    },
+    {
+      "week": "2026-03-16",
+      "station": "KTVU",
+      "gross_calls": 212,
+      "queued_calls": 156,
+      "written_count": 68,
+      "lift_calls": 35,
+      "lift_queued": 23,
+      "lift_written": 12,
+      "tfn_is_station": true
+    }
+  ],
+  "available_weeks": [
+    "2026-03-16",
+    "2026-03-09",
+    "2026-03-02",
+    "2026-02-23",
+    "2026-02-16"
+  ],
+  "latest_week": "2026-03-16",
+  "total_records": 9,
+  "total_available": 9,
+  "has_more": false
+}

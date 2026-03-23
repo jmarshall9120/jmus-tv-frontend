@@ -1,0 +1,75 @@
+# JMUS Demo - Frontend
+
+## Project Overview
+This is a Nuxt.js 4 project demonstrating analytics capabilities - a linear TV agency data analytics dashboard and data ingestion portal demo.
+
+**Tech Stack:**
+- Nuxt.js 4 with Vue 3
+- Vuetify 3 for UI components
+- TypeScript
+- AWS (Cognito via SSO OAuth, AppSync GraphQL, S3)
+- Pinia for state management
+- ESLint
+
+**Reference Repos:**
+- `bloggenai` - Most recent patterns (OAuth SSO, direct GraphQL, model layer)
+- `IvonneWelchDashboard` - Earlier patterns (Amplify Auth, data provider pattern)
+
+## General Principles
+- **ALWAYS check existing implementations** before creating new APIs, components, or stores
+- Follow the exact same patterns as existing code - consistency is critical
+- Use the established data provider pattern for all API interactions
+- Maintain the same error handling approach across the codebase
+- Document patterns in `.cursor/rules/` when establishing new conventions
+
+## Nuxt.js Patterns
+
+### File Structure
+- Use Nuxt's auto-imports - don't manually import composables like `useState`, `useFetch`, `navigateTo`, etc.
+- Place components in `components/` directory (auto-imported)
+- Place composables in `composables/` directory (auto-imported)
+  - `composables/dataProviders/` - API data providers
+  - `composables/dataStores/` - Store utilities
+  - `composables/models/` - Data models
+- Place utilities in `utils/` directory
+- Use `server/api/` for API routes
+- Use `server/utils/` for server-side utilities
+- Place Pinia stores in `stores/` directory
+
+### AWS Configuration
+- Configure AWS services in `plugins/` directory
+- Use `.jmus/outputs.json` for multi-environment configuration
+- Use `useState` for SSR/client hydration of config
+- Handle OAuth SSO flow for authentication (see `bloggenai` patterns)
+- Use direct GraphQL fetch with Authorization headers (see `bloggenai` patterns)
+
+### Component Patterns
+- Use Composition API with `<script setup>`
+- Use Vuetify components (`v-card`, `v-btn`, `v-text-field`, etc.)
+- Extract reusable logic into composables
+- Use TypeScript for component props and emits
+- Follow Vue 3 best practices for reactivity
+
+## TypeScript Standards
+- Use explicit types for function parameters and return values
+- Prefer interfaces over types for object shapes (unless you need unions/intersections)
+- Avoid `any` - use `unknown` if type is truly unknown
+- Use type guards for runtime type checking
+- Import types from `~/utils/types` for common types
+
+## Code Style
+- Follow ESLint configuration
+- Use async/await over promises where possible
+- Use descriptive variable and function names
+- Keep functions focused and single-purpose
+- Use logger from `~/utils/logger` for debugging
+
+## When Adding New Features
+1. **Check existing similar implementations first** - look for patterns in `bloggenai` (most recent) and `IvonneWelchDashboard`
+2. Follow the same structure and patterns exactly
+3. Maintain consistency with naming conventions
+4. Update `.cursor/rules/` files when establishing new patterns
+5. Use direct GraphQL fetch pattern (see `bloggenai`) OR data provider pattern (see `IvonneWelchDashboard`) - be consistent
+6. Use Pinia stores for state management
+7. Use model layer with parse/stringify for AWSJSON fields (see `bloggenai`)
+8. Use centralized error handling with `useErrorNotify` (see `bloggenai`)

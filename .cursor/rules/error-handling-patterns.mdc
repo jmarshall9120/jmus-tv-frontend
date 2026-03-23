@@ -1,0 +1,171 @@
+---
+description: Error handling patterns and notification system
+globs:
+  - "**/composables/**/*.ts"
+  - "**/stores/**/*.ts"
+  - "**/utils/**/*.ts"
+alwaysApply: false
+---
+
+# Error Handling Patterns
+
+## Centralized Error Notification
+
+Use `useErrorNotify` composable for consistent error handling:
+
+```typescript
+// composables/useErrorNotify.ts
+import { useNotificationsStore, extractGraphQLError } from '@/stores/notifications'
+
+export function useErrorNotify() {
+  const store = useNotificationsStore()
+  
+  function report(e: unknown, context?: string) {
+    // Always log to console first
+    console.error(`[ErrorNotify] ${context || 'Error'}:`, e)
+    
+    const gParsed = extractGraphQLError(e as any)
+    if (gParsed) {
+      store.error(context ? `${context}: ${gParsed.message}` : gParsed.message, gParsed.detail)
+      return
+    }
+    
+    if (e instanceof Error) {
+      store.error(context ? `${context}: ${e.message}` : e.message, (e as any).stack)
+      return
+    }
+    
+    if (typeof e === 'string') {
+      store.error(context ? `${context}: ${e}` : e)
+      return
+    }
+    
+    try {
+      store.error(context || 'Unexpected error', JSON.stringify(e, null, 2))
+    } catch {
+      store.error(context || 'Unexpected error')
+    }
+  }
+  
+  return { report, notifyError: report }
+}
+```
+
+## Usage Pattern
+
+```typescript
+// In composables or components
+const { report } = useErrorNotify()
+
+try {
+  const result = await client.graphql({ query, variables })
+  checkGraphQLErrors(result, 'operation')
+  return result.data
+} catch (error) {
+  report(error, 'Failed to fetch data')
+  throw error // Re-throw if needed
+}
+```
+
+## GraphQL Error Checking
+
+```typescript
+// Always check for GraphQL errors after API calls
+const checkGraphQLErrors = (result: any, operation: string) => {
+  if (result.errors && result.errors.length > 0) {
+    const errorMessages = result.errors.map((e: any) => e.message).join('; ')
+    throw new Error(`GraphQL ${operation} failed: ${errorMessages}`)
+  }
+}
+
+// Usage
+const result = await client.graphql({ query, variables })
+checkGraphQLErrors(result, 'getBlog')
+```
+
+## API Error Class
+
+For rich error context:
+
+```typescript
+// utils/apiError.ts
+export interface ApiErrorContext {
+  operation: string
+  variables: any
+  errors: any[]
+  response: any
+  meta: Record<string, any>
+}
+
+export class ApiError extends Error {
+  public operation: string
+  public variables: any
+  public errors: any[]
+  public response: any
+  public meta: Record<string, any>
+  
+  constructor(message: string, ctx: Partial<ApiErrorContext>) {
+    super(message)
+    this.operation = ctx.operation || 'unknown'
+    this.variables = ctx.variables || null
+    this.errors = ctx.errors || []
+    this.response = ctx.response || null
+    this.meta = ctx.meta || {}
+  }
+  
+  toDetail(maxString = 600) {
+    // Sanitize and format error details
+    // ...
+  }
+}
+```
+
+## Store Error Handling
+
+```typescript
+// In stores
+import { useErrorNotify } from '@/composables/useErrorNotify'
+
+export const useClientStore = defineStore('client', () => {
+  const { report } = useErrorNotify()
+  
+  async function loadClients() {
+    try {
+      const result = await listClients(userId)
+      clients.value = result.items
+    } catch (e: any) {
+      report(e, 'Load clients failed')
+      throw e
+    }
+  }
+  
+  return { loadClients }
+})
+```
+
+## Component Error Handling
+
+```typescript
+// In components
+<script setup lang="ts">
+const { report } = useErrorNotify()
+
+async function handleSubmit() {
+  try {
+    await saveData()
+    notifications.success('Saved successfully')
+  } catch (error) {
+    report(error, 'Save failed')
+  }
+}
+</script>
+```
+
+## Important Notes
+
+- **Always use `useErrorNotify`** for error reporting
+- **Check GraphQL errors** after every API call - AppSync returns 200 OK even with errors
+- **Log to console first** before showing user notifications
+- **Extract GraphQL errors** properly using `extractGraphQLError` utility
+- **Provide context** when reporting errors (operation name, etc.)
+- **Re-throw errors** if they need to propagate up the call stack

@@ -1,0 +1,208 @@
+---
+description: Pinia store patterns for state management
+globs:
+  - "**/stores/**/*.ts"
+alwaysApply: false
+---
+
+# Pinia Store Patterns
+
+## Simple Store Pattern (Latest - bloggenai)
+
+Use composables directly in stores for simpler pattern:
+
+```typescript
+// stores/client.ts
+import { defineStore } from 'pinia'
+import { useBlogGenData } from '@/composables/useBlogGenData'
+import { useErrorNotify } from '@/composables/useErrorNotify'
+
+export const useClientStore = defineStore('client', () => {
+  const clients = ref<Client[]>([])
+  const selectedClientId = ref('')
+  const loading = ref(false)
+  const loaded = ref(false)
+  
+  const { report } = useErrorNotify()
+
+  async function loadClients(force = false) {
+    if (!force && (loading.value || loaded.value)) return
+    
+    loading.value = true
+    
+    try {
+      const { getCognitoId } = useAuth()
+      const userId = getCognitoId()
+      
+      if (!userId) {
+        throw new Error('User not authenticated')
+      }
+      
+      const { listClients } = useBlogGenData()
+      const result = await listClients(userId)
+      
+      clients.value = result.items
+      loaded.value = true
+    } catch (e: any) {
+      report(e, 'Load clients failed')
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const selectedClient = computed(() => 
+    clients.value.find(c => c.id === selectedClientId.value)
+  )
+
+  return {
+    clients,
+    selectedClientId,
+    loading,
+    loaded,
+    loadClients,
+    selectedClient
+  }
+})
+```
+
+## Store Base Pattern (Legacy - IvonneWelchDashboard)
+
+Use `useStoreBase` composable for common store functionality:
+
+```typescript
+// stores/enrollments.ts
+import { useStoreBase } from "~/composables/dataStores/base"
+import { useEnrollmentsProvider, useEnrollmentStaticProvider } from "~/composables/dataProviders/enrollments"
+import { useAnalyticsWrapper } from "~/composables/dataStores/customAppsync"
+
+export const useEnrollmentsStore = defineStore('enrollments', (): IDataStore<BABDEnrollment> => {
+  const name = 'EnrollmentsByAgentByMonthEnrolledView'
+  const enrollment_static_data_location = '~~/tests/mocks/enrollment_data.json'
+  
+  const base = useStoreBase<BABDEnrollment, ProviderData>({
+    provider: useEnrollmentsProvider(),
+    staticProvider: useEnrollmentStaticProvider,
+    name,
+    wrapper: useAnalyticsWrapper<BABDEnrollment>,
+    staticDataPath: enrollment_static_data_location,
+    key: 'id'
+  })
+
+  const loadStore = async (
+    start_date: string = '', 
+    end_date: string = '', 
+    agent: string = '', 
+    next_token: string = ''
+  ) => {
+    base.loading.value = true
+    const _params = {
+      ...(start_date && { start_date }),
+      ...(end_date && { end_date }),
+      ...(agent && { agent }),
+      ...(next_token && { next_token }),
+      authMode: 'userPool'
+    }
+    
+    logger.debug('fetch params: ', _params)
+    let data: ProviderData | null = null
+    let errors: IMessage[] = []
+    
+    try {
+      const result = await base.provider.fetch(_params)
+      logger.debug('fetch result:', result)
+      data = result.data as ProviderData
+      errors = result.errors
+      
+      if (errors?.length) {
+        logger.debug('Store Errors', errors)
+      } else {
+        base.setStore((data! as ProviderData).items as BABDEnrollment[])
+      }
+    } catch (err) {
+      const _err = err as Error
+      errors.push({
+        message: _err.message, 
+        priority: MESSAGE_PRIORITY.ERROR
+      })
+      logger.debug('Store Errors', errors)
+    } finally {
+      base.loading.value = false
+    }
+    
+    return { data, errors }
+  }
+
+  return { ...base, loadStore }
+})
+```
+
+## Auth Store Pattern
+
+For authentication, use a simpler pattern:
+
+```typescript
+// stores/auth.ts
+export const useAuthStore = defineStore('auth', () => {
+  const userId = ref<AuthUser['userId']>('')
+  const username = ref<AuthUser['username']>('')
+  const credentials = ref<AuthSession['credentials']>()
+  const tokens = ref<AuthSession['tokens']>()
+
+  const isAuthenticated = computed(() => Boolean(userId.value))
+  
+  const getEmail = computed(() => signInDetails.value?.loginId)
+  
+  const getGroups = computed((): string[] => {
+    const _groups = tokens.value?.accessToken?.payload['cognito:groups']
+    return _groups ? (_groups as string[]) : []
+  })
+
+  async function setUser() {
+    // Auth logic
+  }
+
+  function removeUser() {
+    // Clear auth state
+  }
+
+  return {
+    userId,
+    username,
+    credentials,
+    tokens,
+    isAuthenticated,
+    getEmail,
+    getGroups,
+    setUser,
+    removeUser
+  }
+})
+```
+
+## Store Usage Pattern
+
+```typescript
+// In components or composables
+const enrollmentsStore = useEnrollmentsStore()
+const authStore = useAuthStore()
+
+// Load data
+await enrollmentsStore.loadStore('2024-01-01', '2024-12-31', 'agent-name')
+
+// Access store data
+const items = enrollmentsStore.items
+const loading = enrollmentsStore.loading
+const errors = enrollmentsStore.errors
+```
+
+## Important Notes
+
+- **Use `useStoreBase`** for data stores that need provider abstraction
+- **Use `defineStore`** with composition API syntax
+- **Return store interface** that extends base store functionality
+- **Handle errors consistently** - use IMessage format
+- **Use logger** for debugging store operations
+- **Check existing stores** before creating new ones
+- **Use computed properties** for derived state
+- **Handle loading states** properly

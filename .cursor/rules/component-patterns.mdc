@@ -1,0 +1,200 @@
+---
+description: Vue component patterns with Vuetify
+globs: 
+  - "**/*.vue"
+  - "**/components/**/*.ts"
+alwaysApply: false
+---
+
+# Component Patterns with Vuetify
+
+## Component Structure
+
+### Composition API with Script Setup
+
+```vue
+<!-- ✅ GOOD - Use <script setup> with Vuetify -->
+<template>
+  <v-card>
+    <v-card-title>Title</v-card-title>
+    <v-container>
+      <v-row>
+        <v-col>
+          <v-text-field
+            v-model="emailField"
+            prepend-icon="mdi-mail"
+            label="Email"
+            :error-messages="emailFieldMessage?.message"
+            :error="emailFieldMessage?.priority === MESSAGE_PRIORITY.ERROR"
+          />
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col>
+          <v-btn 
+            color="primary" 
+            @click="handleSubmit"
+            :loading="loading"
+          >
+            Submit
+          </v-btn>
+        </v-col>
+      </v-row>
+    </v-container>
+  </v-card>
+</template>
+
+<script setup lang="ts">
+import { MESSAGE_PRIORITY } from '~/utils/types'
+import type { IMessage } from '~/utils/types'
+
+interface Props {
+  title?: string
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  title: 'Default Title'
+})
+
+const emit = defineEmits<{
+  submit: [value: string]
+}>()
+
+// Use stores
+const authStore = useAuthStore()
+const enrollmentsStore = useEnrollmentsStore()
+
+// Use composables
+const authController = useAuthController()
+
+// Reactive state
+const emailField = ref<string>('')
+const loading = ref<boolean>(false)
+const emailFieldMessage = ref<IMessage | null>(null)
+
+// Computed properties
+const isValid = computed(() => {
+  return emailField.value.length > 0
+})
+
+// Methods
+async function handleSubmit() {
+  loading.value = true
+  try {
+    // Your logic here
+    emit('submit', emailField.value)
+  } catch (error) {
+    const _err = error as Error
+    emailFieldMessage.value = {
+      message: _err.message,
+      priority: MESSAGE_PRIORITY.ERROR
+    }
+  } finally {
+    loading.value = false
+  }
+}
+</script>
+```
+
+## Vuetify Component Patterns
+
+### Cards
+
+```vue
+<v-card>
+  <v-card-title>Title</v-card-title>
+  <v-card-text>Content</v-card-text>
+  <v-card-actions>
+    <v-btn color="error" @click="cancel">Cancel</v-btn>
+    <v-spacer/>
+    <v-btn color="primary" @click="submit">Submit</v-btn>
+  </v-card-actions>
+</v-card>
+```
+
+### Forms
+
+```vue
+<v-text-field
+  v-model="field"
+  prepend-icon="mdi-icon-name"
+  label="Label"
+  :error-messages="errorMessage?.message"
+  :error="errorMessage?.priority === MESSAGE_PRIORITY.ERROR"
+  :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+  :type="showPassword ? 'text' : 'password'"
+  @click:append-inner="showPassword = !showPassword"
+/>
+```
+
+### Loading States
+
+```vue
+<v-btn 
+  :loading="loading"
+  :disabled="loading"
+  @click="handleAction"
+>
+  Action
+</v-btn>
+```
+
+### Navigation Drawer
+
+```vue
+<v-navigation-drawer>
+  <v-list>
+    <v-list-item
+      v-for="item in items"
+      :key="item.title"
+      :to="item.to"
+    >
+      <v-list-item-title>{{ item.title }}</v-list-item-title>
+    </v-list-item>
+  </v-list>
+</v-navigation-drawer>
+```
+
+## Component Organization
+
+- Use Composition API (`<script setup>`) for all new components
+- Use Vuetify components (`v-card`, `v-btn`, `v-text-field`, `v-row`, `v-col`, etc.)
+- Extract reusable logic into composables
+- Keep components focused and single-purpose
+- Use TypeScript interfaces for props and emits
+- Use Material Design Icons (`mdi-*`) for icons
+
+## Error Handling in Components
+
+```vue
+<script setup lang="ts">
+import { MESSAGE_PRIORITY } from '~/utils/types'
+import type { IMessage } from '~/utils/types'
+
+const errorMessage = ref<IMessage | null>(null)
+const formMessages = ref<IMessage[]>([])
+
+function formError(message: string) {
+  formMessages.value.push({
+    message,
+    priority: MESSAGE_PRIORITY.ERROR
+  })
+}
+
+function clearMessages() {
+  errorMessage.value = null
+  formMessages.value.length = 0
+}
+</script>
+```
+
+## Important Notes
+
+- **Use Vuetify components** - don't use plain HTML elements
+- **Use Material Design Icons** (`mdi-*`) for icons
+- **Follow Vuetify layout patterns** - use `v-container`, `v-row`, `v-col`
+- **Handle errors consistently** - use IMessage format with MESSAGE_PRIORITY
+- **Use stores and composables** - don't put business logic directly in components
+- **Check existing components** before creating new ones
+- **Use TypeScript** for props, emits, and component state
+- **Handle loading states** with `:loading` prop on buttons

@@ -1,0 +1,179 @@
+---
+description: Model layer patterns for AWSJSON field handling
+globs:
+  - "**/composables/models/**/*.ts"
+alwaysApply: false
+---
+
+# Model Layer Patterns
+
+## Purpose
+
+Model layer handles transformations between GraphQL wire format (AWSJSON as JSON strings) and application state (parsed objects/arrays).
+
+## Model Structure
+
+```typescript
+// composables/models/useBlogModel.ts
+
+// Application type (parsed from GraphQL)
+export interface Blog {
+  id: string
+  title: string
+  keywords: string[] // Already parsed from AWSJSON
+  focusKeywords: { term: string; target: number }[] // Already parsed
+  // ... other fields
+}
+
+// Mutable type for forms/editing
+export interface BlogMutable extends Blog {
+  _dirty: Set<keyof Blog>
+  _original: Blog
+}
+
+// Writable type for GraphQL mutations (AWSJSON stringified)
+export interface BlogWritable extends Blog {}
+
+export const useBlogModel = () => {
+  /**
+   * Parse raw GraphQL wire format to application types
+   * Handles AWSJSON fields that come as JSON strings
+   */
+  function parse(raw: any): Blog {
+    const parseJson = <T>(field: string | null | undefined, defaultValue: T): T => {
+      if (!field) return defaultValue
+      try {
+        return JSON.parse(field)
+      } catch {
+        return defaultValue
+      }
+    }
+
+    return {
+      id: raw.id,
+      title: raw.title || '',
+      keywords: parseJson<string[]>(raw.keywords, []),
+      focusKeywords: parseJson<{ term: string; target: number }[]>(raw.focusKeywords, []),
+      // ... other fields
+    }
+  }
+
+  /**
+   * Stringify writable object for server mutation
+   * Converts array/object fields to AWSJSON strings
+   */
+  function stringify(writable: BlogWritable): Record<string, any> {
+    return {
+      id: writable.id,
+      title: writable.title,
+      keywords: JSON.stringify(writable.keywords),
+      focusKeywords: JSON.stringify(writable.focusKeywords),
+      // ... other fields
+    }
+  }
+
+  /**
+   * Create mutable form state from parsed blog
+   */
+  function toMutable(parsed: Blog | BlogMutable): BlogMutable {
+    return {
+      ...parsed,
+      _dirty: new Set(),
+      _original: '_original' in parsed ? parsed._original : { ...parsed }
+    }
+  }
+
+  /**
+   * Convert mutable state to writable GraphQL input
+   * ALWAYS returns complete object - never partial (per engineering guardrails)
+   */
+  function toWritable(mutable: BlogMutable): BlogWritable {
+    if (!mutable.clientId) throw new Error('clientId required on BlogWritable')
+    if (!mutable.title) throw new Error('title required on BlogWritable')
+    return {
+      id: mutable.id,
+      clientId: mutable.clientId,
+      title: mutable.title,
+      // ... all other fields
+    }
+  }
+
+  /**
+   * Create a new blog instance with defaults
+   */
+  function newBlog(overrides?: Partial<Blog>): BlogMutable {
+    const defaults: Blog = {
+      id: '',
+      title: '',
+      keywords: [],
+      focusKeywords: [],
+      // ... other defaults
+    }
+
+    const merged = { ...defaults, ...overrides }
+    return {
+      ...merged,
+      _dirty: new Set(),
+      _original: { ...merged }
+    }
+  }
+
+  /**
+   * Mark a field as dirty (changed)
+   */
+  function markDirty(mutable: BlogMutable, field: keyof Blog) {
+    mutable._dirty.add(field)
+  }
+
+  /**
+   * Reset mutable state to original
+   */
+  function reset(mutable: BlogMutable) {
+    Object.assign(mutable, mutable._original)
+    mutable._dirty.clear()
+  }
+
+  return {
+    parse,
+    stringify,
+    toMutable,
+    toWritable,
+    new: newBlog,
+    markDirty,
+    reset,
+  }
+}
+```
+
+## Usage Pattern
+
+```typescript
+// In composables
+const blogModel = useBlogModel()
+
+// Fetch from API
+const raw = await client.graphql({ query: getBlogQuery, variables: { id } })
+const blog = blogModel.parse(raw.data.getBlog) // Parse AWSJSON fields
+
+// Create new instance
+const newBlog = blogModel.new({ clientId: '123', title: 'New Blog' })
+
+// Edit in form
+const mutable = blogModel.toMutable(blog)
+mutable.title = 'Updated Title'
+blogModel.markDirty(mutable, 'title')
+
+// Save to API
+const writable = blogModel.toWritable(mutable)
+const stringified = blogModel.stringify(writable) // Stringify AWSJSON fields
+await client.graphql({ query: updateBlogMutation, variables: { input: stringified } })
+```
+
+## Important Notes
+
+- **Always parse** GraphQL responses using `model.parse()` to handle AWSJSON fields
+- **Always stringify** before mutations using `model.stringify()` to convert arrays/objects to JSON strings
+- **Strip server-generated fields** (gsi1_pk, _created_at, etc.) before create mutations
+- **Use mutable pattern** for form state with change tracking
+- **Always return complete objects** in toWritable - never partial (per engineering guardrails)
+- **Check existing models** before creating new ones - follow the same structure

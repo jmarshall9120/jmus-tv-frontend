@@ -1,0 +1,107 @@
+---
+description: Data provider patterns for API abstraction
+globs:
+  - "**/composables/dataProviders/**/*.ts"
+  - "**/composables/dataStores/**/*.ts"
+alwaysApply: false
+---
+
+# Data Provider Patterns
+
+## Core Pattern
+
+**ALWAYS use the IDataProvider interface** - this is the foundation for all data access in the codebase.
+
+## Provider Types
+
+### 1. AppSync Provider (Production)
+
+```typescript
+// Use for AWS AppSync GraphQL queries
+export const useEnrollmentsProvider = (): IDataProvider<ProviderData> => {
+  return useAmplifyAppsyncProvider('GetEnrollmentsByAgentByMonthEnrolledView')
+}
+```
+
+### 2. Local Dev Provider (Development)
+
+```typescript
+// Use for local development with static/mock data
+export const useEnrollmentStaticProvider = <T>(params: LocalDevProviderParams<T>): IDataProvider<T> => {
+  const _postProcess = (data: T[], params?: any): T[] => {
+    // Add filtering/transformation logic
+    if (params?.start_date) {
+      data = data.filter(item => /* filter logic */)
+    }
+    return data
+  }
+  return useLocalDevProvider({...params, postProcess: _postProcess})
+}
+```
+
+### 3. Static Data Provider
+
+```typescript
+// For loading static JSON files
+const provider = useStaticDataProvider<T>('~~/tests/mocks/data.json')
+```
+
+### 4. Storage Data Provider
+
+```typescript
+// For sessionStorage-based data
+const provider = useStorageDataProvider<T>('storeKey', 'id')
+```
+
+## Post-Processing Pattern
+
+When creating local dev providers, use post-processing for filtering:
+
+```typescript
+const _postProcess = (data: T[], params?: any): T[] => {
+  if (Object.keys(params).includes('start_date')) {
+    const start = toYM(params.start_date)
+    data = data.filter(item => {
+      const ym = toYM(item['date_enrolled'])
+      return ym >= start
+    })
+  }
+  if (Object.keys(params).includes('end_date')) {
+    const end = toYM(params.end_date)
+    data = data.filter(item => {
+      const ym = toYM(item['date_enrolled'])
+      return ym <= end
+    })
+  }
+  logger.debug('Post processed data:', data)
+  return data
+}
+```
+
+## Provider Factory Pattern
+
+Create provider factories that return the appropriate provider based on environment:
+
+```typescript
+export const useEnrollmentsProvider = (): IDataProvider<ProviderData> => {
+  // Returns AppSync provider for production
+  return useAmplifyAppsyncProvider('GetEnrollmentsByAgentByMonthEnrolledView')
+}
+
+export const useEnrollmentStaticProvider = <T>(params: LocalDevProviderParams<T>): IDataProvider<T> => {
+  // Returns local dev provider with post-processing
+  const _postProcess = (data: T[], params?: any): T[] => {
+    // Post-processing logic
+  }
+  return useLocalDevProvider({...params, postProcess: _postProcess})
+}
+```
+
+## Important Notes
+
+- **Always implement IDataProvider interface** - fetch, create, update, delete, reset
+- **Throw ManagedError** for unsupported operations
+- **Use post-processing** for local dev providers to match production behavior
+- **Check existing providers** before creating new ones
+- **Use logger** for debugging provider operations
+- **Return ProccessedData format** with `{ data, errors }` structure

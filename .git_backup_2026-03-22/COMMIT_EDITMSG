@@ -1,0 +1,9 @@
+Postlog: CLEANED view-only dialog, context parsing, field_bindings as date
+
+- Uploads: show checkmark for CLEANED files; open view-only dialog with locked mapping/sample
+- Parse double-encoded + Python-repr context (field_bindings, match_table, sample, detected_columns)
+- Apply field_bindings and user.match_table in applyPhase1Context for view-only
+- Send field_bindings.date (not air_date); remove air_date from backend key mappings
+- usePostlogPipeline + POSTLOG_FRONTEND_INTEGRATION.md updates
+
+Co-authored-by: Cursor <cursoragent@cursor.com>

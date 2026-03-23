@@ -1,0 +1,137 @@
+{
+  "file_001": {
+    "file_id": "file_001",
+    "file_name": "buy-sheet-q1-2025.xlsx",
+    "file_type": "BUY",
+    "status": "PARSED",
+    "row_count": 15234,
+    "metrics": {
+      "total_spots": 15234,
+      "total_cost": 1250000.50,
+      "date_range": {
+        "start": "2025-01-01",
+        "end": "2025-03-31"
+      },
+      "stations": ["STATION-A", "STATION-B", "STATION-C"],
+      "campaigns": ["Campaign 1", "Campaign 2"]
+    },
+    "sample_data": [
+      {
+        "date": "2025-01-15",
+        "station": "STATION-A",
+        "campaign": "Campaign 1",
+        "rotation": "Morning Drive",
+        "time": "08:00",
+        "length": 30,
+        "cost": 1250.00,
+        "audience": 45000
+      },
+      {
+        "date": "2025-01-15",
+        "station": "STATION-B",
+        "campaign": "Campaign 1",
+        "rotation": "Afternoon Drive",
+        "time": "15:30",
+        "length": 60,
+        "cost": 2100.00,
+        "audience": 68000
+      },
+      {
+        "date": "2025-01-16",
+        "station": "STATION-A",
+        "campaign": "Campaign 2",
+        "rotation": "Evening",
+        "time": "19:00",
+        "length": 30,
+        "cost": 1350.00,
+        "audience": 52000
+      }
+    ]
+  },
+  "file_003": {
+    "file_id": "file_003",
+    "file_name": "sales-data-week-3.xlsx",
+    "file_type": "SALE",
+    "status": "PARSED",
+    "row_count": 2341,
+    "metrics": {
+      "total_sales": 2341,
+      "total_revenue": 450000.00,
+      "date_range": {
+        "start": "2025-01-15",
+        "end": "2025-01-21"
+      },
+      "stations": ["STATION-A", "STATION-B"],
+      "attribution_ids": 145
+    },
+    "sample_data": [
+      {
+        "date": "2025-01-15",
+        "attribution_id": "attr_001",
+        "station": "STATION-A",
+        "sales_count": 12,
+        "revenue": 2400.00,
+        "calls": 45,
+        "conversion_rate": 0.267
+      },
+      {
+        "date": "2025-01-16",
+        "attribution_id": "attr_002",
+        "station": "STATION-B",
+        "sales_count": 8,
+        "revenue": 1800.00,
+        "calls": 32,
+        "conversion_rate": 0.25
+      }
+    ]
+  },
+  "file_002": {
+    "file_id": "file_002",
+    "file_name": "postlog-station-a-jan.csv",
+    "file_type": "POSTLOG",
+    "status": "PARSED",
+    "row_count": 8756,
+    "parsed_headers": [
+      "Date",
+      "M EST. (thou)",
+      "Program Name",
+      "Air Time",
+      "Station Code",
+      "Campaign ID",
+      "Rotation FB",
+      "Length (sec)",
+      "Creative Name",
+      "Cost Amount",
+      "Rating %"
+    ],
+    "sample_data": [
+      {
+        "Date": "2025-01-15",
+        "M EST. (thou)": "45.2",
+        "Program Name": "Morning Show",
+        "Air Time": "08:15:00",
+        "Station Code": "STA-A",
+        "Campaign ID": "CAMP-001",
+        "Rotation FB": "Morning Drive",
+        "Length (sec)": "30",
+        "Creative Name": "Ad Spot 1",
+        "Cost Amount": "1250.00",
+        "Rating %": "2.5"
+      },
+      {
+        "Date": "2025-01-15",
+        "M EST. (thou)": "68.5",
+        "Program Name": "Afternoon Drive",
+        "Air Time": "15:30:00",
+        "Station Code": "STA-A",
+        "Campaign ID": "CAMP-002",
+        "Rotation FB": "Afternoon",
+        "Length (sec)": "60",
+        "Creative Name": "Ad Spot 2",
+        "Cost Amount": "2100.00",
+        "Rating %": "3.8"
+      }
+    ],
+    "field_mapping": {}
+  }
+}

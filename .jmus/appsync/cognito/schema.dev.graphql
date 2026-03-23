@@ -1,0 +1,322 @@
+type Article {
+  pk: String
+  sk: String
+  id: ID
+  slug: String
+  status: String
+  title: String
+  summary: String
+  content: String
+  tags: AWSJSON
+  author_id: String
+  gsi1_pk: String
+  gsi1_sk: String
+  gsi3_pk: String
+  gsi3_sk: String
+  _created_at: AWSDateTime
+  _updated_at: AWSDateTime
+  _is_retired: Boolean
+  _row_hash: String
+}
+
+type Grant {
+  cognito_id: String
+  action: String
+  granted_by: String
+  expires_at: AWSDateTime
+  _created_at: AWSDateTime
+  _updated_at: AWSDateTime
+  _is_retired: Boolean
+  _row_hash: String
+}
+
+type User {
+  cognito_id: String
+  id: String
+  sk: String
+  item_type: String
+  first_name: String
+  last_name: String
+  phone_1: String
+  phone_2: String
+  email_1: String
+  email_2: String
+  physical_address_1: String
+  physical_address_2: String
+  physical_city: String
+  physical_state: String
+  physical_zip: String
+  mailing_address_1: String
+  mailing_address_2: String
+  mailing_city: String
+  mailing_state: String
+  mailing_zip: String
+  picture_url: String
+  action: String
+  service: String
+  resource: String
+  permission: String
+  granted_by: String
+  expires_at: AWSDateTime
+  gsi1_pk: String
+  gsi1_sk: String
+  gsi2_pk: String
+  gsi2_sk: String
+  _created_at: AWSDateTime
+  _updated_at: AWSDateTime
+  _is_retired: Boolean
+  _row_hash: String
+}
+
+type Query {
+  getArticle(pk: String!, sk: String!): Article
+  listArticleByPk(pk: String!): [Article]
+  getGrant(cognito_id: String!, action: String!): Grant
+  listGrantByCognito_id(cognito_id: String!): [Grant]
+  getUser(input: GetUserInput): GetUserResult
+  listUserByCognito_id(cognito_id: String!): [User]
+  getProfile: GetUserResult
+  listUsers(limit: Int, paginationToken: String): ListUsersResult
+  exchangeAuthCode(code: String!, clientId: String!): AuthCodeResult @aws_api_key
+}
+
+scalar AWSDateTime
+
+scalar AWSJSON
+
+scalar AWSEmail
+
+scalar AWSURL
+
+scalar AWSPhone
+
+scalar AWSIPAddress
+
+scalar AWSDate
+
+scalar AWSTime
+
+scalar AWSTimestamp
+
+directive @aws_iam on FIELD_DEFINITION | OBJECT
+
+directive @aws_cognito_user_pools on FIELD_DEFINITION | OBJECT
+
+type AuthCodeResult {
+  accessToken: String!
+  idToken: String!
+  refreshToken: String!
+  expiresAt: AWSDateTime!
+  clientId: String!
+}
+
+type StoreAuthCodeResult {
+  ok: Boolean!
+}
+
+extend type Query {
+  getWorkingArticle(slug: String, id: ID): getWorkingArticleResult
+  listWorkingArticles(limit: Int, nextToken: String, status: ArticleStatus): ArticleList
+}
+
+extend type Mutation {
+  storeAuthCode(code: String!, accessToken: String!, idToken: String!, refreshToken: String!, expiresAt: AWSDateTime!, clientId: String!, domain: String!): StoreAuthCodeResult
+}
+
+input GetUserInput {
+  cognito_id: String
+  email_1: String
+}
+
+enum ArticleStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+extend type User {
+  enabled: Boolean
+  userStatus: String
+  createdAt: AWSDateTime
+}
+
+type ListUsersResult {
+  users: [User]
+  nextToken: String
+}
+
+type GetUserResult {
+  cognito_id: String
+  email_1: String
+  first_name: String
+  last_name: String
+  profile: User
+  grants: [Grant]
+  cognito: CognitoBasics
+}
+
+type CognitoBasics {
+  enabled: Boolean
+  status: String
+  email_verified: Boolean
+}
+
+extend type ListUsersResult {
+  debug: AWSJSON
+}
+
+input CreateUserInput {
+  email_1: String!
+  cognito_id: String
+  first_name: String
+  last_name: String
+  phone_1: String
+  email_2: String
+  physical_address_1: String
+  physical_address_2: String
+  physical_city: String
+  pyhsical_state: String
+  physical_zip: String
+  mailing_address_1: String
+  mailing_address_2: String
+  mailing_city: String
+  mailing_state: String
+  mailing_zip: String
+  picture_url: String
+  service: String
+  resource: String
+  permission: String
+  ttl_hours: Int
+}
+
+type CogniotRaw {
+  Attributes: [CogniotAttributes]
+  Enabled: Boolean
+  UserCreateDate: Float
+  UserLastModifiedDate: Float
+  UserStatus: String
+  Username: String
+}
+
+type CogniotAttributes {
+  Name: String
+  Value: String
+}
+
+type CogniotUser {
+  username: String!
+  sub: String
+  raw: CogniotRaw
+}
+
+type CreateUserGrantResult {
+  cognito_id: String
+  cognitoUser: CogniotUser
+  userProfile: User
+  issuedGrants: [Grant]
+  debug: AWSJSON
+}
+
+type SaveArticleOutput {
+  success: Boolean!
+  changed: Boolean
+  article: Article
+  message: String
+}
+
+type Mutation {
+  CreateUser(input: CreateUserInput!): CreateUserGrantResult
+  issueGrant(cognito_id: String!, action: String!, expiresAt: AWSDateTime): Grant
+  revokeGrant(cognito_id: String!, action: String!): RevokeResult
+  storeAuthCode(code: String!, accessToken: String!, idToken: String!, refreshToken: String!, expiresAt: AWSDateTime!, clientId: String!, domain: String!): StoreAuthCodeResult
+  adminCreateUser(email: String, username: String, given_name: String, family_name: String, grant: String, ttl_hours: Int, password: String, suppress_invite: Boolean, options: AdminCreateUserOptions): AdminCreateUserResult
+  disableUser(username: String!): OkResult
+  enableUser(username: String!): OkResult
+  resetPassword(username: String!): OkResult
+  presignBocUpload(target: BocTarget!, key: String!, contentType: String, expiresIn: Int): PresignedUrl
+  presignBocRead(target: BocTarget!, key: String!, expiresIn: Int): PresignedUrl
+  saveWorkingArticle(input: SaveArticleInput!): SaveArticleOutput
+  publishArticle(id: ID, slug: String): PublishArticleOutput
+}
+
+type PublishArticleOutput {
+  ok: Boolean!
+  url: String
+  key: String
+  message: String
+}
+
+type RevokeResult {
+  ok: Boolean!
+}
+
+type OkResult {
+  ok: Boolean!
+}
+
+type AdminCreateUserResult {
+  user_sub: String
+  status: String
+}
+
+input AttributeInput {
+  Name: String!
+  Value: String
+}
+
+input AdminCreateUserOptions {
+  userAttributes: [AttributeInput!]
+  validationData: [AttributeInput!]
+  temporaryPassword: String
+  forceAliasCreation: Boolean
+  messageAction: String
+  desiredDeliveryMediums: [String!]
+  clientMetadata: AWSJSON
+  analyticsMetadata: AWSJSON
+  userContextData: AWSJSON
+}
+
+enum BocTarget {
+  public
+  private
+}
+
+type PresignedUrl {
+  ok: Boolean!
+  method: String!
+  url: AWSURL!
+  bucket: String!
+  key: String!
+  expiresIn: Int!
+}
+
+input SaveArticleInput {
+  id: ID
+  pk: String
+  sk: String
+  slug: String!
+  status: ArticleStatus!
+  title: String!
+  summary: String!
+  content: String!
+  tags: AWSJSON!
+  author_id: String!
+  _row_hash: String
+  _created_at: AWSDateTime
+  _updated_at: AWSDateTime
+  _is_retired: Boolean
+  gsi3_pk: String
+  gsi3_sk: String
+}
+
+type getWorkingArticleResult {
+  items: [Article]
+  nextToken: String
+  scannedCount: Int
+  startedAt: Int
+}
+
+type ArticleList {
+  items: [Article]
+  nextToken: String
+}

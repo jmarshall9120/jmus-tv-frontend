@@ -1,0 +1,60 @@
+{
+  "stations": [
+    {
+      "PK": "JMUS",
+      "SK": "STATION#KSBW-TV",
+      "type": "STATION",
+      "canonical_name": "KSBW",
+      "aliases": ["KSBW-TV", "KSBW"],
+      "context": null,
+      "_is_retired": false
+    },
+    {
+      "PK": "JMUS",
+      "SK": "STATION#KNTV",
+      "type": "STATION",
+      "canonical_name": "KNTV",
+      "aliases": ["KNTV", "Channel 11"],
+      "context": null,
+      "_is_retired": false
+    },
+    {
+      "PK": "JMUS",
+      "SK": "STATION#KTVU",
+      "type": "STATION",
+      "canonical_name": "KTVU",
+      "aliases": ["KTVU", "KTVU-TV"],
+      "context": null,
+      "_is_retired": false
+    }
+  ],
+  "tfns": [
+    {
+      "PK": "JMUS",
+      "SK": "TFN#8088675309",
+      "type": "TFN",
+      "canonical_name": "800-867-5309",
+      "aliases": ["KSBW-TV"],
+      "context": "{\"total_stations\": 1, \"assignments\": [{\"station\": \"KSBW-TV\", \"start_date\": \"2025-01-01\", \"end_date\": null, \"is_station\": true, \"spot_length\": \"30\", \"language\": \"en\", \"commercial_title\": \"Main Line\"}]}",
+      "_is_retired": false
+    },
+    {
+      "PK": "JMUS",
+      "SK": "TFN#8008675309",
+      "type": "TFN",
+      "canonical_name": "800-867-5309-ALT",
+      "aliases": ["KNTV"],
+      "context": "{\"total_stations\": 1, \"assignments\": [{\"station\": \"KNTV\", \"start_date\": \"2025-01-15\", \"end_date\": null, \"is_station\": true, \"spot_length\": \"30\", \"language\": \"en\", \"commercial_title\": \"East Bay\"}]}",
+      "_is_retired": false
+    },
+    {
+      "PK": "JMUS",
+      "SK": "TFN#8005551234",
+      "type": "TFN",
+      "canonical_name": "800-555-1234",
+      "aliases": ["KTVU"],
+      "context": "{\"total_stations\": 1, \"assignments\": [{\"station\": \"KTVU\", \"start_date\": \"2025-02-01\", \"end_date\": null, \"is_station\": true, \"spot_length\": \"30\", \"language\": \"en\", \"commercial_title\": \"Bay Area\"}]}",
+      "_is_retired": false
+    }
+  ]
+}
